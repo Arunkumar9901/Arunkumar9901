@@ -1,0 +1,67 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+import statsmodels.api as sm
+from statsmodels.tsa.seasonal import seasonal_decompose
+from statsmodels.tsa.holtwinters import SimpleExpSmoothing # SES
+from statsmodels.tsa.holtwinters import Holt # Holts Exponential Smoothing
+from statsmodels.tsa.holtwinters import ExponentialSmoothing # 
+import statsmodels.graphics.tsaplots as tsa_plots
+import statsmodels.tsa.statespace as tm_models
+from datetime import datetime,time
+
+data= pd.read_excel('Documents\Datas for project\data\CocaCola_Sales_Rawdata.xlsx')
+data
+
+sns.boxplot("Sales",data=data)
+
+
+data.Sales.plot(label="org")
+for i in range(2,10,2):
+    data["Sales"].rolling(i).mean().plot(label=str(i))
+plt.legend(loc=3)
+
+decompose_ts_add = seasonal_decompose(data.Sales,model="additive")
+decompose_ts_add.plot()
+decompose_ts_mul = seasonal_decompose(data.Sales,model="multiplicative")
+decompose_ts_mul.plot()
+
+
+tsa_plots.plot_acf(data.Sales,lags=10)
+tsa_plots.plot_pacf(data.Sales)
+
+
+Train = data.head(48)
+Test =data.tail(12)
+
+def MAPE(pred,org):
+    temp = np.abs((pred-org))*100/org
+    return np.mean(temp)
+
+ses_model = SimpleExpSmoothing(Train["Sales"]).fit()
+pred_ses = ses_model.predict(start = Test.index[0],end = Test.index[-1])
+MAPE(pred_ses,Test.Sales) 
+
+hw_model = Holt(Train["Sales"]).fit()
+pred_hw = hw_model.predict(start = Test.index[0],end = Test.index[-1])
+MAPE(pred_hw,Test.Sales) 
+
+hwe_model_add_add = ExponentialSmoothing(Train["Sales"],seasonal="add",trend="add",seasonal_periods=4,damped=True).fit()
+pred_hwe_add_add = hwe_model_add_add.predict(start = Test.index[0],end = Test.index[-1])
+MAPE(pred_hwe_add_add,Test.Sales)
+
+hwe_model_mul_add = ExponentialSmoothing(Train["Sales"],seasonal="mul",trend="add",seasonal_periods=4).fit()
+pred_hwe_mul_add = hwe_model_mul_add.predict(start = Test.index[0],end = Test.index[-1])
+MAPE(pred_hwe_mul_add,Test.Sales)
+
+plt.plot(Train.index, Train["Sales"], label='Train',color="black")
+plt.plot(Test.index, Test["Sales"], label='Test',color="blue")
+plt.plot(pred_ses.index, pred_ses, label='SimpleExponential',color="green")
+plt.plot(pred_hw.index, pred_hw, label='Holts_winter',color="red")
+plt.plot(pred_hwe_add_add.index,pred_hwe_add_add,label="HoltsWinterExponential_1",color="brown")
+plt.plot(pred_hwe_mul_add.index,pred_hwe_mul_add,label="HoltsWinterExponential_2",color="yellow")
+plt.legend(loc='best')
+
+
+
