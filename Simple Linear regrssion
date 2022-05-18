@@ -1,0 +1,36 @@
+import numpy as np
+import pandas as pd
+import statsmodels.formula.api as smf
+import seaborn as sns
+
+data=pd.read_csv('Documents\Datas for project\data\delivery_time.csv')
+data
+
+data.info()
+
+sns.distplot(data['Delivery Time'])
+
+sns.distplot(data['Sorting Time'])
+
+data=data.rename({'Delivery Time':'delivery_time','Sorting Time':'sorting_time'},axis=1)
+data
+
+data.corr()
+
+sns.regplot(x=data['delivery_time'],y=data['sorting_time'])
+
+model=smf.ols("delivery_time~sorting_time",data=data).fit()
+
+
+model.params
+
+model.tvalues, model.pvalues
+
+model.rsquared, model.rsquared_adj
+
+delivery_time = (6.582734) + (1.649020)*(5)
+delivery_time
+
+model.predict(data_pred)
+
+
