@@ -1,0 +1,57 @@
+import pandas as pd
+import seaborn as sb
+from sklearn.linear_model import LogisticRegression
+
+
+Data= pd.read_csv("Documents\Datasets/bank-full.csv",sep=";")
+Data
+
+Data.tail()
+
+Data.columns
+
+columns=['age','job','balance','duration','campaign','y']
+log= Data[columns]
+log.info()
+
+pd.crosstab(log.age,log.y).plot(kind='line')
+
+sb.boxplot(data =log,orient = "v")
+
+
+log['outcome'] = log.y.map({'no':0, 'yes':1})
+log.tail(20)
+
+log.boxplot(column='age',by='outcome')
+
+feature=['age','balance','duration','campaign']
+output=['outcome']
+X = log[feature]
+Y = log[output]
+
+classifier= LogisticRegression()
+
+classifier.fit(X,Y)
+
+
+classifier.coef_
+
+classifier.predict_proba(X)
+
+Y_pred= classifier.predict(X)
+Y_pred
+
+from sklearn.metrics import confusion_matrix
+
+confusion_matrix= confusion_matrix(Y,Y_pred)
+
+confusion_matrix
+
+import matplotlib.pyplot as plt
+
+sb.heatmap(confusion_matrix, annot=True)
+plt.xlabel('Predicted label')
+plt.ylabel('Actual label')
+
+
+
