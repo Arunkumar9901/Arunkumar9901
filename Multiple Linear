@@ -1,0 +1,122 @@
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import statsmodels.formula.api as smf
+import statsmodels.api as sm
+import matplotlib.pyplot as plt
+from statsmodels.graphics.regressionplots import influence_plot
+
+
+
+dataset=pd.read_csv('Documents/Datasets/50_Startups.csv')
+dataset
+
+dataset.info()
+
+ds=dataset.rename({'R&D Spend':'RDS','Administration':'Admin','Marketing Spend':'Mkt'},axis=1)
+ds
+
+ds[ds.duplicated()]
+
+ds.describe()
+
+ds.corr()
+
+sns.set_style(style='darkgrid')
+sns.pairplot(ds)
+
+m=smf.ols("Profit~RDS+Admin+Mkt",data=ds).fit()
+
+
+m.params
+
+
+m.tvalues, np.round(m.pvalues,5)
+
+m.rsquared, m.rsquared_adj
+
+s=smf.ols("Profit~Admin",data=ds).fit()
+s.tvalues, s.pvalues
+
+s1=smf.ols("Profit~Mkt",data=ds).fit()
+s1.tvalues,s1.pvalues
+
+s2=smf.ols("Profit~RDS",data=ds).fit()
+s2.tvalues,s2.pvalues
+
+sm.qqplot(m.resid,line='q')
+plt.title("Normal of Plot")
+plt.show()
+
+list(np.where(m.resid<-30000))
+
+def standard_values(vals) : return (vals-vals.mean())/vals.std()  
+
+
+plt.scatter(standard_values(m.fittedvalues),standard_values(m.resid))
+plt.title("Residual Plot")
+plt.xlabel("Fittedvalues")
+plt.ylabel("Reside Values")
+plt.show()
+
+Regersion of RDS
+
+fig=plt.figure(figsize=(10,8))
+sm.graphics.plot_regress_exog(m,'RDS',fig=fig)
+plt.show()
+
+fig=plt.figure(figsize=(10,5))
+sm.graphics.plot_regress_exog(m,'Admin',fig=fig)
+plt.show()
+
+fig=plt.figure(figsize=(10,7))
+sm.graphics.plot_regress_exog(m,'Mkt',fig=fig)
+plt.show()
+
+(c,_)=m.get_influence().cooks_distance
+c
+
+fig=plt.figure(figsize=(20,8))
+plt.stem(np.arange(len(ds)),np.round(c,5))
+plt.xlabel('Row Index')
+plt.ylabel('Cooks Distance')
+plt.show()
+
+np.argmax(c), np.max(c)
+
+influence_plot(m)
+plt.show()
+
+ds[ds.index.isin([49])]
+
+ds2=ds.drop(ds.index[[49]],axis=0).reset_index(drop=True)
+ds2
+
+while np.max(c)>0.5:
+    m=smf.ols("Profit~RDS+Admin+Mkt",data=ds2).fit()
+    (c,_)=m.get_influence().cook_distance
+    c
+    np.argmax(c), np.max(c)
+    ds2=ds2.drop(ds.index[[c]],axis=0).reset_index(drop=True)
+    ds2
+else:
+    final=smf.ols("Profit~RDS+Admin+Mkt",data=ds2).fit()
+    final.rsquared, final.aic
+    print("The model accuracy is",final.rsquared)
+
+ds2
+
+nd=pd.DataFrame({'RDS':70000,'Mkt':90000,'Admin':140000},index=[0])
+nd
+
+final.predict(nd)
+
+final.predict(ds2)
+
+
+d2={'Prep_Models':['Model','Final_Model'],'Rsquared':[m.rsquared,final.rsquared]}
+table=pd.DataFrame(d2)
+table
+
+
+
