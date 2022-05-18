@@ -1,0 +1,87 @@
+import pandas as pd
+import numpy as np
+from matplotlib import pyplot as plt
+import seaborn as sns
+import scipy.cluster.hierarchy as sch
+from sklearn.cluster import AgglomerativeClustering
+
+data=pd.read_csv('Documents\Datas for project\data\crime_data.csv')
+data
+
+def norm_func(i):
+    x=(i-i.min())/(i.max()-i.min())
+    return(x)
+
+data_norm=norm_func(data.iloc[:,1:])
+data_norm
+
+dendrogram=sch.dendrogram(sch.linkage(data_norm,method='average'))
+
+
+hc=AgglomerativeClustering(n_clusters=3,affinity='euclidean',linkage='complete')
+hc
+
+y_hc=hc.fit_predict(data_norm)
+y_hc
+
+
+data['h_clusterid']=hc.labels_
+data
+
+from sklearn.cluster import KMeans
+from scipy.spatial.distance import cdist
+
+data1=pd.read_csv('Documents\Datas for project\data\crime_data.csv')
+
+def norm_func(i):
+    x=(i-i.min())/(i.max()-i.min())
+    return(x)
+
+wcss=[]
+for i in range(1,11):
+    kmeans=KMeans(n_clusters=i)
+    kmeans.fit(data_norm)
+    wcss.append(kmeans.inertia_)
+plt.plot(range(1,11),wcss)
+plt.title('Elbow curv')
+plt.xlabel('number of clusters')
+plt.ylabel('WCSS')
+plt.show()
+
+model=KMeans(n_clusters=4)
+model.fit(data_norm)
+model.labels_
+
+x=pd.Series(model.labels_)
+data1['Clust']=x
+data1
+
+data1.iloc[:,1:5].groupby(data1.Clust).mean()
+
+from sklearn.cluster import DBSCAN
+from sklearn.preprocessing import StandardScaler
+
+data2=pd.read_csv('Documents\Datas for project\data\crime_data.csv')
+
+data2.info()
+
+df=data2.iloc[:,1:5]
+df
+
+df.values
+
+stscaler=StandardScaler().fit(df.values)
+x=stscaler.transform(df.values)
+x
+
+dbscan=DBSCAN(eps=2,min_samples=5)
+dbscan.fit(x)
+
+cluster=pd.DataFrame(dbscan.labels_,columns=['cluster'])
+cluster
+
+pd.concat([data2,cluster],axis=1)
+
+
+
+
