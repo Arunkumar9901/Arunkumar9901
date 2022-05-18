@@ -1,0 +1,159 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import string
+import spacy
+
+
+from matplotlib.pyplot import imread
+from wordcloud import WordCloud, STOPWORDS
+%matplotlib inline
+
+tweets=pd.read_csv('Documents\Datas for project\data/Elon_musk.csv',encoding='Latin-1')
+tweets.drop(['Unnamed: 0'],inplace=True,axis=1)
+tweets
+
+tweets=[Text.strip() for Text in tweets.Text] 
+tweets=[Text for Text in tweets if Text] 
+tweets[0:10]
+
+tweets_text=' '.join(tweets)
+tweets_text
+
+from nltk.tokenize import TweetTokenizer
+tknzr = TweetTokenizer(strip_handles=True)
+tweets_tokens=tknzr.tokenize(tweets_text)
+print(tweets_tokens)
+
+tweets_tokens_text=' '.join(tweets_tokens)
+tweets_tokens_text
+
+no_punc_text=tweets_tokens_text.translate(str.maketrans('','',string.punctuation))
+no_punc_text
+
+import re
+no_url_text=re.sub(r'http\S+', '', no_punc_text)
+no_url_text
+
+from nltk.tokenize import word_tokenize
+text_tokens=word_tokenize(no_url_text)
+print(text_tokens)
+
+import nltk
+nltk.download('punkt')
+nltk.download('stopwords')
+
+len(text_tokens)
+
+from nltk.corpus import stopwords
+my_stop_words=stopwords.words('english')
+
+sw_list = ['\x92','rt','ye','yeah','haha','Yes','U0001F923','I']
+my_stop_words.extend(sw_list)
+
+no_stop_tokens=[word for word in text_tokens if not word in my_stop_words]
+print(no_stop_tokens)
+
+lower_words=[Text.lower() for Text in no_stop_tokens]
+print(lower_words[100:200])
+
+from nltk.stem import PorterStemmer
+ps=PorterStemmer()
+stemmed_tokens=[ps.stem(word) for word in lower_words]
+print(stemmed_tokens[100:200])
+
+%pip install  spacy download en
+
+!python -m spacy download en_core_web_sm
+
+
+
+
+
+
+nlp=spacy.load('en_core_web_sm')
+doc=nlp(' '.join(lower_words))
+print(doc)
+
+lemmas=[token.lemma_ for token in doc]
+print(lemmas)
+
+clean_tweets=' '.join(lemmas)
+clean_tweets
+
+from sklearn.feature_extraction.text import CountVectorizer
+cv=CountVectorizer()
+tweetscv=cv.fit_transform(lemmas)
+
+print(cv.vocabulary_)
+
+
+print(cv.get_feature_names()[100:200])
+
+
+print(tweetscv.toarray()[100:200])
+
+
+print(tweetscv.toarray().shape)
+
+
+cv_ngram_range=CountVectorizer(analyzer='word',ngram_range=(1,3),max_features=100)
+bow_matrix_ngram=cv_ngram_range.fit_transform(lemmas)
+
+print(cv_ngram_range.get_feature_names())
+print(bow_matrix_ngram.toarray())
+
+from sklearn.feature_extraction.text import TfidfVectorizer
+tfidfv_ngram_max_features=TfidfVectorizer(norm='l2',analyzer='word',ngram_range=(1,3),max_features=500)
+tfidf_matix_ngram=tfidfv_ngram_max_features.fit_transform(lemmas)
+
+print(tfidfv_ngram_max_features.get_feature_names())
+print(tfidf_matix_ngram.toarray())
+
+def plot_cloud(wordcloud):
+    plt.figure(figsize=(40,30))
+    plt.imshow(wordcloud)
+    plt.axis('off')
+
+STOPWORDS.add('pron')
+STOPWORDS.add('rt')
+STOPWORDS.add('yeah')
+wordcloud=WordCloud(width=3000,height=2000,background_color='black',max_words=50,
+                   colormap='Set1',stopwords=STOPWORDS).generate(clean_tweets)
+plot_cloud(wordcloud)
+
+nlp=spacy.load('en_core_web_sm')
+
+one_block=clean_tweets
+doc_block=nlp(one_block)
+spacy.displacy.render(doc_block,style='ent',jupyter=True)
+
+for token in doc_block[100:200]:
+    print(token,token.pos_)  
+
+nouns_verbs=[token.text for token in doc_block if token.pos_ in ('NOUN','VERB')]
+print(nouns_verbs[100:200])
+
+from sklearn.feature_extraction.text import CountVectorizer
+cv=CountVectorizer()
+
+X=cv.fit_transform(nouns_verbs)
+sum_words=X.sum(axis=0)
+
+words_freq=[(word,sum_words[0,idx]) for word,idx in cv.vocabulary_.items()]
+words_freq=sorted(words_freq, key=lambda x: x[1], reverse=True)
+
+wd_df=pd.DataFrame(words_freq)
+wd_df.columns=['word','count']
+
+wd_df[0:10].plot.bar(x='word',figsize=(12,8),title='Top 10 nouns and verbs');
+
+from nltk import tokenize
+sentences=tokenize.sent_tokenize(' '.join(tweets))
+sentences
+
+sent_df=pd.DataFrame(sentences,columns=['sentence'])
+sent_df
+
+
+
